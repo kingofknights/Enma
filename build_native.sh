@@ -5,7 +5,7 @@ if [ "$(uname)" == "Linux" ]; then
     if ! dpkg -s libxinerama-dev &> /dev/null; then
         echo "Missing X11 development headers required for Raylib."
         echo "Attempting to install them via apt-get (this may prompt for your sudo password)..."
-        sudo apt-get update && sudo apt-get install -y libxinerama-dev libxcursor-dev libxrandr-dev libxi-dev libgl1-mesa-dev libx11-dev libxext-dev
+        sudo apt-get update && sudo apt-get install -y libxinerama-dev libxcursor-dev libxrandr-dev libxi-dev libgl1-mesa-dev libx11-dev libxext-dev libpq-dev
     fi
 fi
 
