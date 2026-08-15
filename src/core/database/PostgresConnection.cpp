@@ -51,9 +51,6 @@ auto PostgresConnection::Connect() -> bool
 auto PostgresConnection::Disconnect() -> void 
 {
 #if !defined(__EMSCRIPTEN__)
-    if (_data->_conn && _data->_conn->is_open()) {
-        _data->_conn->disconnect();
-    }
     _data->_conn.reset();
 #endif
 }

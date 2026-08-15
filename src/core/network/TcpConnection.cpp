@@ -117,7 +117,7 @@ auto TcpConnection::Receive(std::span<uint8_t> buffer_) -> int32_t
 #endif
 }
 
-auto TcpReceiver::Close() -> void 
+auto TcpConnection::Close() -> void 
 {
 #if !defined(__EMSCRIPTEN__)
     if (_state._socketFd >= 0) {

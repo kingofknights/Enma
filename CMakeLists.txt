@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(VENDOR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor)
 
+include(FetchContent)
+
 # Fetch spdlog for asynchronous ultra-low latency logging
 FetchContent_Declare(
     spdlog
@@ -16,7 +18,6 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(spdlog)
 
 # Use FetchContent to pull raylib directly from source for ALL platforms
-include(FetchContent)
 FetchContent_Declare(
     raylib
     GIT_REPOSITORY https://github.com/raysan5/raylib.git
