@@ -32,6 +32,7 @@ This project is an **ultra-low latency trading application**. Every architectura
 
 ## 6. Coding Style
 - **Naming Conventions**: 
+  - All file names must be `PascalCase` and use `.hpp` and `.cpp` extensions (e.g., `MarketData.hpp`).
   - All function names must be `PascalCase` (e.g., `ProcessMarketData()`).
   - Member variables in both classes and structs must be prefixed with `_` (e.g., `_price`, `_orderId`).
   - All function parameters must have the suffix `_` (e.g., `price_`, `orderId_`).

@@ -21,9 +21,17 @@ set(BUILD_GAMES OFF CACHE BOOL "" FORCE)
 
 FetchContent_MakeAvailable(raylib)
 
-add_executable(RainApp src/main.cpp)
+add_executable(RainApp 
+    src/main.cpp
+    src/core/network/UdpReceiver.cpp
+    src/core/network/TcpConnection.cpp
+)
 
 target_link_libraries(RainApp PRIVATE raylib)
+
+if(WIN32)
+    target_link_libraries(RainApp PRIVATE ws2_32)
+endif()
 target_include_directories(RainApp PRIVATE ${VENDOR_DIR}/raylib/src)
 
 if (EMSCRIPTEN)
