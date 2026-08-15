@@ -1,0 +1,4 @@
+build_native/
+build_wasm/
+vendor/
+.DS_Store
