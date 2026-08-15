@@ -62,3 +62,4 @@ This project is an **ultra-low latency trading application**. Every architectura
 ## 7. Architecture & Code Quality
 - **Design Patterns & SOLID**: The codebase must adhere to strictly defined architecture following **SOLID principles** and appropriate **Design Patterns** (e.g., Strategy, Factory, Observer) wherever they do not compromise the zero-allocation/low-latency constraints.
 - **Continuous Refactoring**: If a block of code can be refactored into a smaller, more concise function, or if it can be optimized for better performance or readability, **always refactor and optimize it immediately**.
+- **UI Design**: Always use icons whenever possible for UI elements. A Nerd Font (JetBrainsMono) is provided; use its unicode codepoints instead of raw text labels (e.g. use filter/chevron icons instead of text like 'v').

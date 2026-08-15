@@ -51,6 +51,9 @@ add_executable(RainApp
     src/core/network/UdpReceiver.cpp
     src/core/network/TcpConnection.cpp
     src/core/database/PostgresConnection.cpp
+    src/gui/components/TableView.cpp
+    src/gui/utils/Theme.cpp
+    src/gui/utils/FontManager.cpp
 )
 
 target_link_libraries(RainApp PRIVATE raylib)
@@ -69,9 +72,12 @@ endif()
 if(WIN32)
     target_link_libraries(RainApp PRIVATE ws2_32)
 endif()
-target_include_directories(RainApp PRIVATE 
-    ${VENDOR_DIR}/raylib/src 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
+target_include_directories(RainApp PRIVATE
+    src
+    vendor/spdlog/include
+    vendor/libpqxx/include
+    ${libpqxx_SOURCE_DIR}/include
+    vendor/IconFontCppHeaders
 )
 
 if (EMSCRIPTEN)
