@@ -18,11 +18,11 @@ struct PostgresConnection::PrivateData {
 };
 #endif
 
-PostgresConnection::PostgresConnection(const char* connectionString_)
+PostgresConnection::PostgresConnection(std::string_view connectionString_)
     : _data(std::make_unique<PrivateData>())
 {
 #if !defined(__EMSCRIPTEN__)
-    _data->_connectionString = connectionString_ ? connectionString_ : "";
+    _data->_connectionString = std::string(connectionString_);
 #endif
 }
 
@@ -58,7 +58,7 @@ auto PostgresConnection::Disconnect() -> void
 #endif
 }
 
-auto PostgresConnection::Execute(const char* query_) -> bool 
+auto PostgresConnection::Execute(std::string_view query_) -> bool 
 {
 #if defined(__EMSCRIPTEN__)
     return false;
@@ -71,7 +71,7 @@ auto PostgresConnection::Execute(const char* query_) -> bool
         // pqxx::work initiates a transaction which is heavily allocating and blocking.
         // Again, this is strictly forbidden in the trading hot-path.
         pqxx::work txn(*_data->_conn);
-        txn.exec(query_);
+        txn.exec(std::string(query_));
         txn.commit();
         return true;
     } catch (const std::exception& e_) {

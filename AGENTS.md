@@ -41,6 +41,9 @@ This project is an **ultra-low latency trading application**. Every architectura
   - Use `using` directives (e.g., `using PriceT = int32_t;`, `using QuantityT = uint32_t;`).
 - **Containers**: 
   - Any use of a container must be explicitly declared and instantiated first (e.g., upfront during application initialization). No container should be dynamically created or resized during the hot path.
+- **Views & Spans**:
+  - Always use `std::span` instead of raw pointers with sizes when passing arrays or memory buffers.
+  - Always use `std::string_view` instead of `const char*` or `const std::string&` when passing read-only strings.
 - **Fixed-width Integer Types**:
   - Never use loosely sized types like `int`, `long`, or `short`.
   - Always use explicitly sized types from `<cstdint>` (e.g., `uint32_t`, `int64_t`) to ensure cross-platform deterministic sizing.

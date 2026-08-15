@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <string_view>
 
 namespace enma::core::database {
 
@@ -10,7 +11,7 @@ public:
     // IMPORTANT: PostgreSQL connections allocate memory heavily and do blocking I/O.
     // This class MUST ONLY be used during application initialization, end-of-day reporting,
     // or entirely on an isolated non-critical logging thread. NEVER on the hot path.
-    PostgresConnection(const char* connectionString_);
+    PostgresConnection(std::string_view connectionString_);
     ~PostgresConnection();
 
     [[nodiscard]] auto Connect() -> bool;
@@ -18,7 +19,7 @@ public:
 
     // Example query execution method.
     // In a real ultra-low latency system, you would pass pre-formatted statements and avoid strings.
-    [[nodiscard]] auto Execute(const char* query_) -> bool;
+    [[nodiscard]] auto Execute(std::string_view query_) -> bool;
 
 private:
     struct PrivateData; // Pimpl idiom to hide pqxx dependencies from our low-latency headers

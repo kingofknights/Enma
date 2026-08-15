@@ -14,9 +14,9 @@
 
 namespace enma::core::network {
 
-UdpReceiver::UdpReceiver(const char* ipAddress_, uint16_t port_) 
+UdpReceiver::UdpReceiver(std::string_view ipAddress_, uint16_t port_) 
 {
-    _state._ipAddress = ipAddress_;
+    _state._ipAddress = std::string(ipAddress_);
     _state._port = port_;
     _state._socketFd = -1;
     
@@ -64,9 +64,9 @@ auto UdpReceiver::Initialize() -> bool
     serverAddr.sin_port = htons(_state._port);
     
 #if defined(_WIN32)
-    serverAddr.sin_addr.s_addr = inet_addr(_state._ipAddress);
+    serverAddr.sin_addr.s_addr = inet_addr(_state._ipAddress.c_str());
 #elif defined(__linux__)
-    inet_pton(AF_INET, _state._ipAddress, &serverAddr.sin_addr);
+    inet_pton(AF_INET, _state._ipAddress.c_str(), &serverAddr.sin_addr);
 #endif
 
     if (bind(static_cast<int32_t>(_state._socketFd), reinterpret_cast<sockaddr*>(&serverAddr), sizeof(serverAddr)) < 0) {
@@ -78,7 +78,7 @@ auto UdpReceiver::Initialize() -> bool
 #endif
 }
 
-auto UdpReceiver::Receive(uint8_t* buffer_, uint32_t bufferSize_) -> int32_t 
+auto UdpReceiver::Receive(std::span<uint8_t> buffer_) -> int32_t 
 {
 #if defined(__EMSCRIPTEN__)
     return -1;
@@ -88,9 +88,9 @@ auto UdpReceiver::Receive(uint8_t* buffer_, uint32_t bufferSize_) -> int32_t
     }
 
 #if defined(_WIN32)
-    int32_t bytesReceived = recv(static_cast<SOCKET>(_state._socketFd), reinterpret_cast<char*>(buffer_), static_cast<int>(bufferSize_), 0);
+    int32_t bytesReceived = recv(static_cast<SOCKET>(_state._socketFd), reinterpret_cast<char*>(buffer_.data()), static_cast<int>(buffer_.size()), 0);
 #elif defined(__linux__)
-    int32_t bytesReceived = recv(static_cast<int32_t>(_state._socketFd), buffer_, bufferSize_, 0);
+    int32_t bytesReceived = recv(static_cast<int32_t>(_state._socketFd), buffer_.data(), buffer_.size(), 0);
 #endif
 
     return bytesReceived;
