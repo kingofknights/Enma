@@ -8,14 +8,16 @@ set(VENDOR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor)
 
 include(FetchContent)
 
-# Fetch spdlog for asynchronous ultra-low latency logging
-FetchContent_Declare(
-    spdlog
-    GIT_REPOSITORY https://github.com/gabime/spdlog.git
-    GIT_TAG v1.13.0
-    SOURCE_DIR ${VENDOR_DIR}/spdlog
-)
-FetchContent_MakeAvailable(spdlog)
+if(NOT EMSCRIPTEN)
+    # Fetch spdlog for asynchronous ultra-low latency logging
+    FetchContent_Declare(
+        spdlog
+        GIT_REPOSITORY https://github.com/gabime/spdlog.git
+        GIT_TAG v1.13.0
+        SOURCE_DIR ${VENDOR_DIR}/spdlog
+    )
+    FetchContent_MakeAvailable(spdlog)
+endif()
 
 # Use FetchContent to pull raylib directly from source for ALL platforms
 FetchContent_Declare(
@@ -51,10 +53,10 @@ add_executable(RainApp
     src/core/database/PostgresConnection.cpp
 )
 
-target_link_libraries(RainApp PRIVATE raylib spdlog)
+target_link_libraries(RainApp PRIVATE raylib)
 
 if(NOT EMSCRIPTEN)
-    target_link_libraries(RainApp PRIVATE pqxx)
+    target_link_libraries(RainApp PRIVATE pqxx spdlog)
     
     # Ensure assets (like fonts) are copied to the build directory for native execution
     add_custom_command(TARGET RainApp POST_BUILD
@@ -67,7 +69,10 @@ endif()
 if(WIN32)
     target_link_libraries(RainApp PRIVATE ws2_32)
 endif()
-target_include_directories(RainApp PRIVATE ${VENDOR_DIR}/raylib/src)
+target_include_directories(RainApp PRIVATE 
+    ${VENDOR_DIR}/raylib/src 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
 
 if (EMSCRIPTEN)
     target_compile_definitions(RainApp PRIVATE PLATFORM_WEB)
