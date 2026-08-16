@@ -9,7 +9,7 @@ if [ "$(uname)" == "Linux" ]; then
     fi
 fi
 
-mkdir -p build_native
-cd build_native
-cmake ..
+mkdir -p build/native
+cd build/native
+cmake ../..
 cmake --build .

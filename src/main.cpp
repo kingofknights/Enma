@@ -1,89 +1,87 @@
-#include "gui/components/TableView.hpp"
-#include "gui/utils/Theme.hpp"
-#include "gui/utils/FontManager.hpp"
-#include "raylib.h"
+#include "Dashboard.hpp"
+#include "audio/Sound.hpp"
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+#include <GLFW/glfw3.h>
+#include "IconsMaterialDesign.h"
+
 #include "spdlog/spdlog.h"
 #include "spdlog/async.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
-#include <array>
-#include <string_view>
+#include <vector>
+#include <memory>
 
 #if defined(PLATFORM_WEB)
     #include <emscripten/emscripten.h>
 #endif
 
-// ==========================================
-// MOCK DATA PROVIDER FOR DEMO
-// ==========================================
-
-struct TradeRecord {
-    std::string_view _symbol;
-    std::string_view _side;
-    std::string_view _price;
-    std::string_view _quantity;
-};
-
-class MockTradeProvider {
-public:
-    static constexpr uint32_t RowCount = 5;
-
-    MockTradeProvider() {
-        _data[0] = {"BTC/USD", "BUY", "64302.50", "0.5"};
-        _data[1] = {"ETH/USD", "SELL", "3412.10", "12.0"};
-        _data[2] = {"SOL/USD", "BUY", "145.20", "100.0"};
-        _data[3] = {"BTC/USD", "SELL", "64305.00", "0.1"};
-        _data[4] = {"XRP/USD", "BUY", "0.58", "5000.0"};
-    }
-
-    [[nodiscard]] auto operator()(uint32_t row_, uint32_t col_) const -> std::string_view {
-        if (row_ >= RowCount) [[unlikely]] return "";
-        switch (col_) {
-            case 0: return _data[row_]._symbol;
-            case 1: return _data[row_]._side;
-            case 2: return _data[row_]._price;
-            case 3: return _data[row_]._quantity;
-            default: return "";
-        }
-    }
-
-private:
-    std::array<TradeRecord, RowCount> _data;
-};
-
-// ==========================================
-// APPLICATION STATE
-// ==========================================
-
 constexpr int32_t screenWidth = 800;
 constexpr int32_t screenHeight = 450;
 
-// Global components for the demo
-MockTradeProvider g_tradeProvider;
-std::array<std::string_view, 4> g_columns = {"Symbol", "Side", "Price", "Qty"};
-enma::gui::components::TableView g_tableView(g_columns);
+Dashboard g_dashboard;
+GLFWwindow* g_window = nullptr;
 
-// ==========================================
-// MAIN LOOP
-// ==========================================
-
-void UpdateDrawFrame(void)
+static void GlfwErrorCallback(int error_, const char* description_)
 {
-    BeginDrawing();
-    ClearBackground(enma::gui::theme::ThemeManager::Get()._background);
-    
-    // Define the bounding box for the table
-    Rectangle tableBounds = { 20.0f, 20.0f, static_cast<float>(screenWidth - 40), static_cast<float>(screenHeight - 40) };
-    
-    // Handle Input & Draw Table (Using the unified zero-allocation UpdateAndDraw method)
-    g_tableView.UpdateAndDraw(tableBounds, MockTradeProvider::RowCount, g_tradeProvider);
+    spdlog::error("GLFW Error {}: {}", error_, description_);
+}
 
-    EndDrawing();
+void SetupImGuiStyle() {
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.Colors[ImGuiCol_WindowBg] = ImVec4(0.06f, 0.06f, 0.06f, 1.00f);
+    style.Colors[ImGuiCol_Header] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
+    style.Colors[ImGuiCol_HeaderHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.80f);
+    style.Colors[ImGuiCol_HeaderActive] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
+    style.Colors[ImGuiCol_TableRowBg] = ImVec4(0.09f, 0.09f, 0.09f, 1.00f);
+    style.Colors[ImGuiCol_TableRowBgAlt] = ImVec4(0.11f, 0.11f, 0.11f, 1.00f);
+    style.FrameRounding = 4.0f;
+}
+
+auto AddIconFonts(const std::string& ttf_, float size_) -> void {
+    ImGuiIO& io = ImGui::GetIO();
+    float baseFontSize = size_;
+    float iconFontSize = baseFontSize;
+
+    static constexpr ImWchar icons_ranges[] = { ICON_MIN_MD, ICON_MAX_16_MD, 0 };
+    ImFontConfig icons_config;
+    icons_config.MergeMode   = true;
+    icons_config.PixelSnapH  = true;
+    icons_config.GlyphOffset = ImVec2(0, 4);
+    
+    io.Fonts->AddFontFromFileTTF(ttf_.data(), iconFontSize);
+    io.Fonts->AddFontFromFileTTF("resources/fonts/MaterialIcons-Regular.ttf", iconFontSize, &icons_config, icons_ranges);
+
+    spdlog::info("Adding Fonts Style {} : {}", ttf_, iconFontSize);
+    spdlog::info("Adding Fonts Icon {} : {}", "resources/fonts/MaterialIcons-Regular.ttf", iconFontSize);
+}
+
+void UpdateDrawFrame()
+{
+    glfwPollEvents();
+
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    int display_w, display_h;
+    glfwGetFramebufferSize(g_window, &display_w, &display_h);
+    
+    // Draw the dashboard UI
+    g_dashboard.Draw(g_window, display_w, display_h);
+
+    ImGui::Render();
+    glViewport(0, 0, display_w, display_h);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    glfwSwapBuffers(g_window);
 }
 
 auto main() -> int 
 {
-    // Initialize Async Logger
     spdlog::init_thread_pool(8192, 1);
     auto stdout_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("logs/rain.log", true);
@@ -95,24 +93,64 @@ auto main() -> int
     spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] [%l] %v");
     spdlog::info("Enma Trading Engine starting... 12 cores active, Production environment");
 
-    // Initialize Raylib
-    InitWindow(screenWidth, screenHeight, "Enma Trading Engine");
+    if (!AudioEngine::Initialize()) {
+        spdlog::warn("AudioEngine failed to initialize. Sound features will be disabled.");
+    }
+
+    glfwSetErrorCallback(GlfwErrorCallback);
+    if (!glfwInit())
+        return 1;
+
+#if defined(PLATFORM_WEB)
+    const char* glsl_version = "#version 300 es";
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+#else
+    const char* glsl_version = "#version 130";
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+#endif
     
-    // Initialize UI Assets
-    enma::gui::utils::FontManager::Initialize();
+    // Remove borders/title bar and open maximized
+    glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+    glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
+
+    g_window = glfwCreateWindow(screenWidth, screenHeight, "Enma Trading Engine", nullptr, nullptr);
+    if (g_window == nullptr)
+        return 1;
+    glfwMakeContextCurrent(g_window);
+    glfwSwapInterval(1);
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+
+    SetupImGuiStyle();
+
+    ImGui_ImplGlfw_InitForOpenGL(g_window, true);
+    ImGui_ImplOpenGL3_Init(glsl_version);
+
+    AddIconFonts("resources/fonts/JetBrainsMono.ttf", 16.0f);
 
 #if defined(PLATFORM_WEB)
     emscripten_set_main_loop(UpdateDrawFrame, 0, 1);
 #else
-    SetTargetFPS(60);
-    while (!WindowShouldClose()) {
+    while (!glfwWindowShouldClose(g_window)) {
         UpdateDrawFrame();
     }
 #endif
 
-    // Cleanup
-    enma::gui::utils::FontManager::Unload();
-    CloseWindow();
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
+    glfwDestroyWindow(g_window);
+    glfwTerminate();
+
+    AudioEngine::Shutdown();
 
     return 0;
 }

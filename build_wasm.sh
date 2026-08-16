@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_DIR="build_wasm"
+BUILD_DIR="build/wasm"
 mkdir -p "$BUILD_DIR"
 
 # Ensure emsdk is available, if not install it locally in the build folder
@@ -12,10 +12,10 @@ if ! command -v emcmake &> /dev/null; then
     cd "$BUILD_DIR/emsdk"
     ./emsdk install latest
     ./emsdk activate latest
-    cd ../..
+    cd ../../..
     source "$BUILD_DIR/emsdk/emsdk_env.sh"
 fi
 
 cd "$BUILD_DIR"
-emcmake cmake ..
+emcmake cmake ../..
 cmake --build .

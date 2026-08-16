@@ -110,7 +110,7 @@ auto TcpConnection::Receive(std::span<uint8_t> buffer_) -> int32_t
 #if defined(_WIN32)
     int32_t bytesReceived = recv(static_cast<SOCKET>(_state._socketFd), reinterpret_cast<char*>(buffer_.data()), static_cast<int>(buffer_.size()), 0);
 #elif defined(__linux__)
-    int32_t bytesReceived = recv(static_cast<int32_t>(_state._socketFd), buffer_.data(), buffer_.size(), 0);
+    int32_t bytesReceived = static_cast<int32_t>(recv(static_cast<int32_t>(_state._socketFd), buffer_.data(), buffer_.size(), 0));
 #endif
 
     return bytesReceived;

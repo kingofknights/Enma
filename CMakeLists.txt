@@ -6,60 +6,28 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(VENDOR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor)
 
-include(FetchContent)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-if(NOT EMSCRIPTEN)
-    # Fetch spdlog for asynchronous ultra-low latency logging
-    FetchContent_Declare(
-        spdlog
-        GIT_REPOSITORY https://github.com/gabime/spdlog.git
-        GIT_TAG v1.13.0
-        SOURCE_DIR ${VENDOR_DIR}/spdlog
-    )
-    FetchContent_MakeAvailable(spdlog)
-endif()
-
-# Use FetchContent to pull raylib directly from source for ALL platforms
-FetchContent_Declare(
-    raylib
-    GIT_REPOSITORY https://github.com/raysan5/raylib.git
-    GIT_TAG master
-    SOURCE_DIR ${VENDOR_DIR}/raylib
-)
-
-# Disable examples and games to speed up the build
-set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(BUILD_GAMES OFF CACHE BOOL "" FORCE)
-
-FetchContent_MakeAvailable(raylib)
-
-if(NOT EMSCRIPTEN)
-    # libpqxx for PostgreSQL (Native only)
-    FetchContent_Declare(
-        libpqxx
-        GIT_REPOSITORY https://github.com/jtv/libpqxx.git
-        GIT_TAG 7.9.0
-        SOURCE_DIR ${VENDOR_DIR}/libpqxx
-    )
-    set(SKIP_BUILD_TEST ON CACHE BOOL "" FORCE)
-    set(BUILD_DOC OFF CACHE BOOL "" FORCE)
-    FetchContent_MakeAvailable(libpqxx)
-endif()
+include(cmake/imgui.cmake)
+include(cmake/Dependencies.cmake)
+include(cmake/CompilerWarnings.cmake)
+include(cmake/Optimizations.cmake)
 
 add_executable(RainApp 
     src/main.cpp
+    src/Dashboard.cpp
+    src/audio/MiniaudioImpl.cpp
+    src/audio/Sound.cpp
     src/core/network/UdpReceiver.cpp
     src/core/network/TcpConnection.cpp
     src/core/database/PostgresConnection.cpp
-    src/gui/components/TableView.cpp
-    src/gui/utils/Theme.cpp
-    src/gui/utils/FontManager.cpp
 )
 
-target_link_libraries(RainApp PRIVATE raylib)
+target_link_libraries(RainApp PRIVATE imgui)
 
 if(NOT EMSCRIPTEN)
-    target_link_libraries(RainApp PRIVATE pqxx spdlog)
+    find_package(OpenGL REQUIRED)
+    target_link_libraries(RainApp PRIVATE pqxx spdlog OpenGL::GL)
     
     # Ensure assets (like fonts) are copied to the build directory for native execution
     add_custom_command(TARGET RainApp POST_BUILD
@@ -72,27 +40,40 @@ endif()
 if(WIN32)
     target_link_libraries(RainApp PRIVATE ws2_32)
 endif()
-target_include_directories(RainApp PRIVATE
-    src
-    vendor/spdlog/include
-    vendor/libpqxx/include
+target_include_directories(RainApp PRIVATE src)
+target_include_directories(RainApp SYSTEM PRIVATE
+    ${spdlog_SOURCE_DIR}/include
     ${libpqxx_SOURCE_DIR}/include
-    vendor/IconFontCppHeaders
+    ${iconfontcppheaders_SOURCE_DIR}
+    ${miniaudio_SOURCE_DIR}
 )
+
+# Enable project warnings and LTO optimization
+set_project_warnings(RainApp)
+enable_project_optimizations(RainApp)
+
+# Precompile headers to significantly reduce compilation times
+target_precompile_headers(RainApp PRIVATE
+    <cstdint>
+    <string>
+    <string_view>
+    <vector>
+    <array>
+    <memory>
+    <utility>
+)
+
+if(NOT EMSCRIPTEN)
+    target_precompile_headers(RainApp PRIVATE <spdlog/spdlog.h>)
+endif()
 
 if (EMSCRIPTEN)
     target_compile_definitions(RainApp PRIVATE PLATFORM_WEB)
     set_target_properties(RainApp PROPERTIES SUFFIX ".html")
     
-    # Required link options for Raylib on web
+    # Required link options for GLFW on web
     target_link_options(RainApp PRIVATE -s USE_GLFW=3)
     
     # Preload the assets directory (for Material Icons)
     target_link_options(RainApp PRIVATE "--preload-file" "${CMAKE_CURRENT_SOURCE_DIR}/assets@/assets")
-    
-    # Include raylib's default HTML shell if available
-    set(RAYLIB_SHELL "${VENDOR_DIR}/raylib/src/shell.html")
-    if(EXISTS ${RAYLIB_SHELL})
-        target_link_options(RainApp PRIVATE "--shell-file" "${RAYLIB_SHELL}")
-    endif()
 endif()
