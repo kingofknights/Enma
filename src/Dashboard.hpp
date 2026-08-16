@@ -21,6 +21,9 @@ public:
     auto Draw(GLFWwindow* window_, int32_t displayWidth_, int32_t displayHeight_) -> void;
 
 private:
+    auto DrawHeader(GLFWwindow* window_, float height_) -> void;
+    auto DrawFooter(float height_) -> void;
+
     static constexpr uint32_t RowCount = 5;
     using TradeRecordArrayT = std::array<TradeRecord, RowCount>;
     using SideOptionsT = std::array<const char*, 2>;

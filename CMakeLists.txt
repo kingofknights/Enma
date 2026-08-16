@@ -16,6 +16,8 @@ include(cmake/Optimizations.cmake)
 add_executable(RainApp 
     src/main.cpp
     src/Dashboard.cpp
+    src/Theme.cpp
+    src/FontManager.cpp
     src/audio/MiniaudioImpl.cpp
     src/audio/Sound.cpp
     src/core/network/UdpReceiver.cpp
